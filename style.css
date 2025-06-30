@@ -50,20 +50,117 @@ h1 {
   font-size: 16px;
   color: #444;
 }
-.restaurants-container {
-  margin-top: 20px;
+/* Estilos para os restaurantes */
+#restaurants-container {
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.restaurants-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.restaurants-box h2 {
+  color: #e67e22;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.restaurant-item {
+  display: flex;
+  gap: 15px;
   padding: 15px;
+  margin-bottom: 10px;
   background: #f9f9f9;
   border-radius: 8px;
+  align-items: center;
 }
 
-.restaurants-container ol {
-  padding-left: 20px;
+.rank {
+  background: #e67e22;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
 }
 
-.restaurants-container li {
-  margin-bottom: 10px;
-  padding: 8px;
-  background: white;
-  border-radius: 4px;
+.restaurant-info {
+  flex: 1;
+}
+
+.restaurant-info h3 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.rating {
+  color: #f1c40f;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rating span {
+  color: #777;
+  font-size: 0.9em;
+}
+
+.address {
+  color: #666;
+  margin: 5px 0;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status {
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
+.status.open {
+  color: #27ae60;
+}
+
+.status.closed {
+  color: #e74c3c;
+}
+
+.no-results {
+  color: #666;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Estilos para informações de IP */
+.ip-info {
+  background: #eaf6ff;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 30px auto;
+  max-width: 600px;
+}
+
+.ip-info h2 {
+  color: #0077cc;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Ícones (Font Awesome - inclua no seu HTML) */
+.fas {
+  font-size: 1em;
 }
