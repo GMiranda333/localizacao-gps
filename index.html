@@ -1,78 +1,17 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Localização Atual</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 2rem;
-    }
-    button {
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      border: none;
-      background: #4CAF50;
-      color: white;
-      border-radius: 5px;
-    }
-    #output {
-      margin-top: 2rem;
-      font-size: 1.1rem;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Descubra sua Localização</h1>
-  <button onclick="getLocation()">Obter Localização</button>
-  <p id="output">Clique no botão para descobrir onde você está.</p>
-
-  <script>
-    async function getLocation() {
-      const output = document.getElementById("output");
-
-      if (!navigator.geolocation) {
-        output.textContent = "Geolocalização não suportada no seu navegador.";
-        return;
-      }
-
-      output.textContent = "Obtendo coordenadas...";
-
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          output.textContent = `Coordenadas: Latitude ${lat.toFixed(6)}, Longitude ${lon.toFixed(6)}\nBuscando endereço...`;
-
-          const apiKey = 'SUA_CHAVE_GOOGLE_API_AQUI'; // Substitua aqui
-          const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
-
-          try {
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.status === "OK") {
-              const address = data.results[0].formatted_address;
-              output.textContent = `📍 Você está em:\n${address}`;
-            } else {
-              output.textContent = `Erro ao buscar endereço: ${data.status}`;
-            }
-          } catch (error) {
-            output.textContent = "Erro ao acessar a API: " + error.message;
-          }
-        },
-        (error) => {
-          output.textContent = "Erro ao obter localização: " + error.message;
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    }
-  </script>
+  <div class="container">
+    <h1>Minha Localização</h1>
+    <p id="status">Obtendo localização...</p>
+    <p id="endereco"></p>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
