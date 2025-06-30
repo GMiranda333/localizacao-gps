@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   // Busca IP e informações da conexão
-  fetch("https://ipinfo.io/json?token=SEU_TOKEN_AQUI") // ou remova ?token=... se estiver usando sem conta
+  fetch("https://ipinfo.io/json?token=bf5e61442d8ab7") // ou remova ?token=... se estiver usando sem conta
     .then((response) => response.json())
     .then((data) => {
       const ipInfo = document.createElement("div");
