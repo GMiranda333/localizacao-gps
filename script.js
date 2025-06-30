@@ -34,11 +34,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   );
 
-  // 🔽 Adiciona bloco de IP e conexão
-  fetch("https://ipinfo.io/json?token=atualize_se_necessario")
+  // Busca IP e informações da conexão
+  fetch("https://ipinfo.io/json?token=SEU_TOKEN_AQUI") // ou remova ?token=... se estiver usando sem conta
     .then((response) => response.json())
     .then((data) => {
-      const ipContainer = document.createElement("div");
-      ipContainer.style.marginTop = "30px";
-      ipContainer.innerHTML = `
-        <h2>Dados da Con
+      const ipInfo = document.createElement("div");
+      ipInfo.id = "ip-info";
+      ipInfo.innerHTML = `
+        <h2>Dados da Conexão</h2>
+        <p><strong>IP:</strong> ${data.ip}</p>
+        <p><strong>Local:</strong> ${data.city}, ${data.region} - ${data.country}</p>
+        <p><strong>Provedor:</strong> ${data.org}</p>
+      `;
+      document.body.appendChild(ipInfo);
+    })
+    .catch((err) => {
+      console.warn("Erro ao obter IP:", err);
+    });
+});
