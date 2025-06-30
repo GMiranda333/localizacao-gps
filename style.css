@@ -1,59 +1,24 @@
+/* Estilos gerais */
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f1f1f1;
-}
-
-.container {
-  max-width: 500px;
-  margin: 80px auto;
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  text-align: center;
-}
-
-h1 {
-  font-size: 24px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
   color: #333;
-}
-
-#status,
-#endereco {
-  margin-top: 20px;
-  font-size: 18px;
-  color: #555;
-}
-
-/* Estilo do bloco de dados de conexão */
-#ip-info {
-  margin: 40px auto;
-  max-width: 500px;
-  background-color: #e8f4fc;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  text-align: left;
 }
 
-#ip-info h2 {
-  margin-top: 0;
-  font-size: 20px;
-  color: #0077b6;
-  text-align: center;
+/* Container de status */
+#status, #endereco {
+  padding: 10px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  margin-bottom: 10px;
 }
 
-#ip-info p {
-  margin: 6px 0;
-  font-size: 16px;
-  color: #444;
-}
-/* Estilos para os restaurantes */
+/* Container de restaurantes */
 #restaurants-container {
-  margin: 20px auto;
-  max-width: 600px;
+  margin: 30px 0;
 }
 
 .restaurants-box {
@@ -61,24 +26,32 @@ h1 {
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid #eee;
 }
 
 .restaurants-box h2 {
   color: #e67e22;
-  margin-bottom: 15px;
+  margin-top: 0;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1.4em;
 }
 
 .restaurant-item {
   display: flex;
   gap: 15px;
   padding: 15px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   background: #f9f9f9;
   border-radius: 8px;
-  align-items: center;
+  align-items: flex-start;
+  transition: transform 0.2s;
+}
+
+.restaurant-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .rank {
@@ -91,6 +64,7 @@ h1 {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .restaurant-info {
@@ -100,6 +74,7 @@ h1 {
 .restaurant-info h3 {
   margin: 0 0 5px 0;
   color: #333;
+  font-size: 1.2em;
 }
 
 .rating {
@@ -108,14 +83,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 5px;
+  font-size: 0.9em;
 }
 
 .rating span {
   color: #777;
-  font-size: 0.9em;
 }
 
-.address {
+.cuisine, .address {
   color: #666;
   margin: 5px 0;
   font-size: 0.9em;
@@ -124,17 +99,16 @@ h1 {
   gap: 5px;
 }
 
-.status {
-  font-size: 0.8em;
-  font-weight: bold;
+.website {
+  display: inline-block;
+  margin-top: 8px;
+  color: #3498db;
+  text-decoration: none;
+  font-size: 0.9em;
 }
 
-.status.open {
-  color: #27ae60;
-}
-
-.status.closed {
-  color: #e74c3c;
+.website:hover {
+  text-decoration: underline;
 }
 
 .no-results {
@@ -143,13 +117,27 @@ h1 {
   padding: 20px;
 }
 
-/* Estilos para informações de IP */
+.suggestion {
+  color: #666;
+  font-size: 0.9em;
+  text-align: center;
+  margin-top: -10px;
+}
+
+.osm-attribution {
+  text-align: right;
+  font-size: 0.8em;
+  color: #888;
+  margin-top: 15px;
+}
+
+/* Informações de IP */
 .ip-info {
   background: #eaf6ff;
   padding: 20px;
   border-radius: 10px;
-  margin: 30px auto;
-  max-width: 600px;
+  margin: 30px 0;
+  border: 1px solid #d0e3ff;
 }
 
 .ip-info h2 {
@@ -158,9 +146,28 @@ h1 {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1.3em;
 }
 
-/* Ícones (Font Awesome - inclua no seu HTML) */
+/* Ícones */
 .fas {
   font-size: 1em;
+  width: 20px;
+  text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  body {
+    padding: 15px;
+  }
+  
+  .restaurant-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .rank {
+    align-self: flex-start;
+  }
 }
