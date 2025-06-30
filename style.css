@@ -25,3 +25,24 @@ h1 {
   font-size: 18px;
   color: #555;
 }
+#ip-info {
+  margin-top: 30px;
+  background-color: #e8f4fc;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  text-align: left;
+}
+
+#ip-info h2 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #0077b6;
+  text-align: center;
+}
+
+#ip-info p {
+  margin: 6px 0;
+  font-size: 16px;
+  color: #444;
+}
