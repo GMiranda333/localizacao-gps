@@ -2,11 +2,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("status");
   const enderecoEl = document.getElementById("endereco");
 
+  // Verifica suporte à geolocalização
   if (!navigator.geolocation) {
     statusEl.textContent = "Geolocalização não suportada.";
     return;
   }
 
+  // Obtém coordenadas GPS
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       const { latitude, longitude } = pos.coords;
@@ -31,4 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
       maximumAge: 0,
     }
   );
-});
+
+  // 🔽 Adiciona bloco de IP e conexão
+  fetch("https://ipinfo.io/json?token=atualize_se_necessario")
+    .then((response) => response.json())
+    .then((data) => {
+      const ipContainer = document.createElement("div");
+      ipContainer.style.marginTop = "30px";
+      ipContainer.innerHTML = `
+        <h2>Dados da Con
