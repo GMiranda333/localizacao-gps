@@ -34,16 +34,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   );
 
-  // Busca IP e informações da conexão
-  fetch("https://ipinfo.io/json?token=bf5e61442d8ab7")
+  // Busca IP e informações da conexão via ipapi.co (sem token)
+  fetch("https://ipapi.co/json/")
     .then((response) => response.json())
     .then((data) => {
       const ipInfo = document.createElement("div");
       ipInfo.id = "ip-info";
+      ipInfo.style.marginTop = "30px";
+      ipInfo.style.padding = "20px";
+      ipInfo.style.borderRadius = "12px";
+      ipInfo.style.backgroundColor = "#eaf6ff";
+      ipInfo.style.maxWidth = "500px";
+      ipInfo.style.marginLeft = "auto";
+      ipInfo.style.marginRight = "auto";
+      ipInfo.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
       ipInfo.innerHTML = `
-        <h2>Dados da Conexão</h2>
+        <h2 style="color: #0077cc">Dados da Conexão</h2>
         <p><strong>IP:</strong> ${data.ip || "N/A"}</p>
-        <p><strong>Local:</strong> ${data.city || "N/A"}, ${data.region || "N/A"} - ${data.country || "N/A"}</p>
+        <p><strong>Local:</strong> ${data.city || "N/A"}, ${data.region || "N/A"} - ${data.country_name || "N/A"}</p>
         <p><strong>Provedor:</strong> ${data.org || "N/A"}</p>
       `;
       document.body.appendChild(ipInfo);
