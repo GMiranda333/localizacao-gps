@@ -35,21 +35,20 @@ document.addEventListener("DOMContentLoaded", () => {
   );
 
   // Busca IP e informações da conexão
-// Busca IP e informações da conexão
-fetch("https://ipinfo.io/json?token=bf5e61442d8ab7")
-  .then((response) => response.json())
-  .then((data) => {
-    const ipInfo = document.createElement("div");
-    ipInfo.id = "ip-info";
-    ipInfo.innerHTML = `
-      <h2>Dados da Conexão</h2>
-      <p><strong>IP:</strong> ${data.ip || "N/A"}</p>
-      <p><strong>Local:</strong> ${data.city || "N/A"}, ${data.region || "N/A"} - ${data.country || "N/A"}</p>
-      <p><strong>Provedor:</strong> ${data.org || "N/A"}</p>
-    `;
-    document.body.appendChild(ipInfo);
-  })
-  .catch((err) => {
-    console.warn("Erro ao obter IP:", err);
-  });
-
+  fetch("https://ipinfo.io/json?token=bf5e61442d8ab7")
+    .then((response) => response.json())
+    .then((data) => {
+      const ipInfo = document.createElement("div");
+      ipInfo.id = "ip-info";
+      ipInfo.innerHTML = `
+        <h2>Dados da Conexão</h2>
+        <p><strong>IP:</strong> ${data.ip || "N/A"}</p>
+        <p><strong>Local:</strong> ${data.city || "N/A"}, ${data.region || "N/A"} - ${data.country || "N/A"}</p>
+        <p><strong>Provedor:</strong> ${data.org || "N/A"}</p>
+      `;
+      document.body.appendChild(ipInfo);
+    })
+    .catch((err) => {
+      console.warn("Erro ao obter IP:", err);
+    });
+});
