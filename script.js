@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const restaurantSection = document.getElementById("restaurants-section");
   const ipInfoContainer = document.getElementById("ip-info-container");
 
-  // Cache de imagens e controle de requisições
+  // Cache de imagens
   const IMAGE_CACHE = {};
   let lastImageRequestTime = 0;
 
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     
     // Mostra a seção de restaurantes
     restaurantSection.style.display = 'block';
-    displayRestaurants(restaurants, latitude, longitude);
+    displayRestaurants(restaurants);
 
   } catch (error) {
     console.error("Erro:", error);
@@ -86,23 +86,23 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
     const data = await response.json();
     const elements = data.elements || [];
     
-    // Processa os resultados - filtrando apenas com endereço completo
+    // Processa os resultados - agora aceitando todos os restaurantes
     const restaurants = [];
     for (const element of elements) {
-      if (element.tags && element.tags.name && hasCompleteAddress(element.tags)) {
+      if (element.tags && element.tags.name) {
         const restaurant = {
           id: element.id,
           name: element.tags.name,
           rating: parseFloat(element.tags["smiley:rating"] || (3.5 + Math.random() * 1.5).toFixed(1)),
-          address: formatAddress(element.tags),
+          address: formatAddress(element.tags) || "Endereço não especificado",
           cuisine: element.tags.cuisine || "Variada",
           website: element.tags.website || null,
           lat: element.lat || element.center?.lat,
-          lon: element.lon || element.center?.lon
+          lon: element.lon || element.center?.lon,
+          hasCompleteAddress: hasCompleteAddress(element.tags)
         };
         
-        // Busca imagem do restaurante
-        restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine, restaurant.address);
+        restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine);
         restaurants.push(restaurant);
       }
     }
@@ -110,7 +110,6 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
     return restaurants
       .sort((a, b) => b.rating - a.rating)
       .slice(0, 5);
-
   } catch (error) {
     console.error("Erro no fetchNearbyRestaurants:", error);
     return [];
@@ -123,10 +122,13 @@ function hasCompleteAddress(tags) {
 
 function formatAddress(tags) {
   if (tags["addr:full"]) return tags["addr:full"];
-  return `${tags["addr:street"] || ''} ${tags["addr:housenumber"] || ''}, ${tags["addr:city"] || ''}`.trim().replace(/,$/, '');
+  if (tags["addr:street"]) {
+    return `${tags["addr:street"] || ''} ${tags["addr:housenumber"] || ''}, ${tags["addr:city"] || ''}`.trim().replace(/,\s*$/, '');
+  }
+  return null;
 }
 
-async function fetchRestaurantImage(name, cuisine, address) {
+async function fetchRestaurantImage(name, cuisine) {
   const cacheKey = `${name}-${cuisine}`;
   
   // Verificar cache local primeiro
@@ -159,11 +161,11 @@ async function fetchRestaurantImage(name, cuisine, address) {
       return wikiMediaUrl;
     }
 
-    // 3. Fallback final - imagem local
-    return 'assets/restaurant-placeholder.jpg';
+    // 3. Fallback final - imagem genérica local
+    return null;
   } catch (error) {
     console.error("Erro ao buscar imagem:", error);
-    return 'assets/restaurant-placeholder.jpg';
+    return null;
   }
 }
 
@@ -209,8 +211,8 @@ function displayRestaurants(restaurants) {
     restaurantsContainer.innerHTML = `
       <div class="no-restaurants">
         <i class="fas fa-utensils fa-3x"></i>
-        <h3>Nenhum restaurante com endereço completo encontrado</h3>
-        <p>Não encontramos restaurantes com endereço válido próximo a você.</p>
+        <h3>Nenhum restaurante encontrado próximo a você</h3>
+        <p>Tente aumentar o raio de busca ou verifique sua conexão com a internet.</p>
       </div>
     `;
     return;
@@ -219,7 +221,7 @@ function displayRestaurants(restaurants) {
   restaurantsContainer.innerHTML = `
     <div class="restaurants-grid">
       ${restaurants.map(rest => `
-        <div class="restaurant-card">
+        <div class="restaurant-card ${!rest.hasCompleteAddress ? 'incomplete-address' : ''}">
           <div class="restaurant-image-container">
             ${rest.image ? `
               <div class="restaurant-image" style="background-image: url('${rest.image}')"></div>
@@ -231,6 +233,11 @@ function displayRestaurants(restaurants) {
             <div class="rating-badge">
               <i class="fas fa-star"></i> ${rest.rating.toFixed(1)}
             </div>
+            ${!rest.hasCompleteAddress ? `
+              <div class="address-warning">
+                <i class="fas fa-exclamation-triangle"></i> Endereço incompleto
+              </div>
+            ` : ''}
           </div>
           <div class="restaurant-info">
             <h3>${rest.name}</h3>
