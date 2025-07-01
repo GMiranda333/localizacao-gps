@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const restaurantSection = document.getElementById("restaurants-section");
   const ipInfoContainer = document.getElementById("ip-info-container");
 
+  // Cache de imagens e controle de requisições
+  const IMAGE_CACHE = {};
+  let lastImageRequestTime = 0;
+
   // Verifica suporte à geolocalização
   if (!navigator.geolocation) {
     statusEl.innerHTML = "<i class='fas fa-exclamation-triangle'></i> Geolocalização não suportada pelo seu navegador.";
@@ -50,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   fetchIPInfo(ipInfoContainer);
 });
 
-// Função para buscar endereço
+// Funções auxiliares
 async function fetchAddress(lat, lng) {
   try {
     const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR`);
@@ -62,7 +66,6 @@ async function fetchAddress(lat, lng) {
   }
 }
 
-// Função para buscar restaurantes próximos (usando Overpass API)
 async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
   try {
     const overpassQuery = `
@@ -83,7 +86,7 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
     const data = await response.json();
     const elements = data.elements || [];
     
-    // Processa os resultados - AGORA FILTRANDO APENAS COM ENDEREÇO COMPLETO
+    // Processa os resultados - filtrando apenas com endereço completo
     const restaurants = [];
     for (const element of elements) {
       if (element.tags && element.tags.name && hasCompleteAddress(element.tags)) {
@@ -98,7 +101,7 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
           lon: element.lon || element.center?.lon
         };
         
-        // Busca imagem do restaurante (AGORA COM FALLBACK MELHOR)
+        // Busca imagem do restaurante
         restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine, restaurant.address);
         restaurants.push(restaurant);
       }
@@ -114,37 +117,72 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
   }
 }
 
-// Função auxiliar para verificar endereço completo
 function hasCompleteAddress(tags) {
   return tags["addr:street"] && (tags["addr:housenumber"] || tags["addr:full"]);
 }
 
-// Função auxiliar para formatar endereço
 function formatAddress(tags) {
   if (tags["addr:full"]) return tags["addr:full"];
   return `${tags["addr:street"] || ''} ${tags["addr:housenumber"] || ''}, ${tags["addr:city"] || ''}`.trim().replace(/,$/, '');
 }
 
-// Função para buscar imagem do restaurante (AGORA MAIS EFICIENTE)
 async function fetchRestaurantImage(name, cuisine, address) {
+  const cacheKey = `${name}-${cuisine}`;
+  
+  // Verificar cache local primeiro
+  if (IMAGE_CACHE[cacheKey]) {
+    return IMAGE_CACHE[cacheKey];
+  }
+
+  // Rate limiting para APIs
+  const now = Date.now();
+  if (now - lastImageRequestTime < 300) {
+    await new Promise(resolve => setTimeout(resolve, 300 - (now - lastImageRequestTime)));
+  }
+  lastImageRequestTime = Date.now();
+
   try {
-    // Tenta primeiro com Unsplash por ser mais rápido e confiável
-    const cuisineType = cuisine.split(',')[0] || 'food';
-    const unsplashUrl = `https://source.unsplash.com/300x200/?restaurant,${encodeURIComponent(cuisineType)}`;
+    // 1. Tentar Unsplash primeiro
+    const cuisineType = (cuisine.split(',')[0] || 'food').replace(/_/g, '+');
+    const unsplashUrl = `https://source.unsplash.com/random/300x200/?restaurant,${cuisineType},food`;
     
-    // Testa se a imagem existe
-    const imgTest = await new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = unsplashUrl;
-    });
-    
-    if (imgTest) return unsplashUrl;
-    
-    // Fallback para Wikimedia apenas se necessário
-    const searchTerm = `${name} ${cuisine} ${address}`.replace(/\s+/g, '+');
-    const response = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=images&titles=${searchTerm}&prop=imageinfo&iiprop=url&format=json&origin=*`);
+    const imgLoaded = await loadImage(unsplashUrl);
+    if (imgLoaded) {
+      IMAGE_CACHE[cacheKey] = unsplashUrl;
+      return unsplashUrl;
+    }
+
+    // 2. Fallback para Wikimedia
+    const wikiMediaUrl = await fetchWikimediaImage(name, cuisine);
+    if (wikiMediaUrl) {
+      IMAGE_CACHE[cacheKey] = wikiMediaUrl;
+      return wikiMediaUrl;
+    }
+
+    // 3. Fallback final - imagem local
+    return 'assets/restaurant-placeholder.jpg';
+  } catch (error) {
+    console.error("Erro ao buscar imagem:", error);
+    return 'assets/restaurant-placeholder.jpg';
+  }
+}
+
+function loadImage(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+
+async function fetchWikimediaImage(name, cuisine) {
+  try {
+    const searchTerm = `${name} ${cuisine}`.replace(/\s+/g, '+');
+    const response = await fetch(
+      `https://commons.wikimedia.org/w/api.php?action=query&generator=images&titles=${searchTerm}&prop=imageinfo&iiprop=url&format=json&origin=*`,
+      { cache: 'force-cache' }
+    );
     
     const data = await response.json();
     const pages = data.query?.pages;
@@ -157,16 +195,14 @@ async function fetchRestaurantImage(name, cuisine, address) {
         }
       }
     }
-    
     return null;
   } catch (error) {
-    console.error("Erro ao buscar imagem:", error);
+    console.error("Erro Wikimedia API:", error);
     return null;
   }
 }
 
-// Exibe os restaurantes no DOM (AGORA COM VERIFICAÇÃO DE IMAGEM)
-function displayRestaurants(restaurants, userLat, userLng) {
+function displayRestaurants(restaurants) {
   const restaurantsContainer = document.getElementById("restaurants-container");
   
   if (!restaurants.length) {
@@ -174,7 +210,7 @@ function displayRestaurants(restaurants, userLat, userLng) {
       <div class="no-restaurants">
         <i class="fas fa-utensils fa-3x"></i>
         <h3>Nenhum restaurante com endereço completo encontrado</h3>
-        <p>Não encontramos restaurantes com endereço válido próximo a você. Tente aumentar o raio de busca.</p>
+        <p>Não encontramos restaurantes com endereço válido próximo a você.</p>
       </div>
     `;
     return;
@@ -215,17 +251,22 @@ function displayRestaurants(restaurants, userLat, userLng) {
       `).join('')}
     </div>
     <div class="attribution">
-      <p>Dados obtidos do OpenStreetMap | Imagens do Unsplash/Wikimedia</p>
+      <p>Dados obtidos do OpenStreetMap</p>
     </div>
   `;
 }
 
-// Busca informações do IP
 async function fetchIPInfo(container) {
   try {
-    const response = await fetch("https://ipapi.co/json/");
-    const data = await response.json();
+    const response = await fetch("https://ipapi.co/json/").catch(async () => {
+      return await fetch("https://ipwhois.app/json/");
+    });
     
+    if (response.status === 429) {
+      throw new Error("Limite de requisições excedido");
+    }
+    
+    const data = await response.json();
     container.innerHTML = `
       <h2><i class="fas fa-network-wired"></i> Informações da Conexão</h2>
       <div class="ip-info-grid">
@@ -240,14 +281,14 @@ async function fetchIPInfo(container) {
           <i class="fas fa-map-marker-alt"></i>
           <div>
             <h3>Localização Aproximada</h3>
-            <p>${data.city || "N/A"}, ${data.region || "N/A"}</p>
+            <p>${data.city || "N/A"}, ${data.region || data.regionName || "N/A"}</p>
           </div>
         </div>
         <div class="ip-info-item">
           <i class="fas fa-server"></i>
           <div>
             <h3>Provedor</h3>
-            <p>${data.org || "N/A"}</p>
+            <p>${data.org || data.isp || "N/A"}</p>
           </div>
         </div>
       </div>
@@ -255,7 +296,9 @@ async function fetchIPInfo(container) {
   } catch (error) {
     console.warn("Erro ao obter informações do IP:", error);
     container.innerHTML = `
-      <p class="ip-error"><i class="fas fa-info-circle"></i> Não foi possível obter informações da conexão</p>
+      <p class="ip-error">
+        <i class="fas fa-info-circle"></i> Informações de conexão temporariamente indisponíveis
+      </p>
     `;
   }
 }
