@@ -83,25 +83,23 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
     const data = await response.json();
     const elements = data.elements || [];
     
-    // Processa os resultados
+    // Processa os resultados - AGORA FILTRANDO APENAS COM ENDEREÇO COMPLETO
     const restaurants = [];
     for (const element of elements) {
-      if (element.tags && element.tags.name) {
+      if (element.tags && element.tags.name && hasCompleteAddress(element.tags)) {
         const restaurant = {
           id: element.id,
           name: element.tags.name,
           rating: parseFloat(element.tags["smiley:rating"] || (3.5 + Math.random() * 1.5).toFixed(1)),
-          address: element.tags["addr:street"] ? 
-            `${element.tags["addr:street"]} ${element.tags["addr:housenumber"] || ""}`.trim() : 
-            "Endereço não disponível",
+          address: formatAddress(element.tags),
           cuisine: element.tags.cuisine || "Variada",
           website: element.tags.website || null,
           lat: element.lat || element.center?.lat,
           lon: element.lon || element.center?.lon
         };
         
-        // Busca imagem do restaurante (se disponível)
-        restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine);
+        // Busca imagem do restaurante (AGORA COM FALLBACK MELHOR)
+        restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine, restaurant.address);
         restaurants.push(restaurant);
       }
     }
@@ -116,10 +114,36 @@ async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
   }
 }
 
-// Função para buscar imagem do restaurante (Wikimedia Commons)
-async function fetchRestaurantImage(name, cuisine) {
+// Função auxiliar para verificar endereço completo
+function hasCompleteAddress(tags) {
+  return tags["addr:street"] && (tags["addr:housenumber"] || tags["addr:full"]);
+}
+
+// Função auxiliar para formatar endereço
+function formatAddress(tags) {
+  if (tags["addr:full"]) return tags["addr:full"];
+  return `${tags["addr:street"] || ''} ${tags["addr:housenumber"] || ''}, ${tags["addr:city"] || ''}`.trim().replace(/,$/, '');
+}
+
+// Função para buscar imagem do restaurante (AGORA MAIS EFICIENTE)
+async function fetchRestaurantImage(name, cuisine, address) {
   try {
-    const searchTerm = `${name} ${cuisine} restaurant`.replace(/\s+/g, '+');
+    // Tenta primeiro com Unsplash por ser mais rápido e confiável
+    const cuisineType = cuisine.split(',')[0] || 'food';
+    const unsplashUrl = `https://source.unsplash.com/300x200/?restaurant,${encodeURIComponent(cuisineType)}`;
+    
+    // Testa se a imagem existe
+    const imgTest = await new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = unsplashUrl;
+    });
+    
+    if (imgTest) return unsplashUrl;
+    
+    // Fallback para Wikimedia apenas se necessário
+    const searchTerm = `${name} ${cuisine} ${address}`.replace(/\s+/g, '+');
     const response = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=images&titles=${searchTerm}&prop=imageinfo&iiprop=url&format=json&origin=*`);
     
     const data = await response.json();
@@ -134,15 +158,14 @@ async function fetchRestaurantImage(name, cuisine) {
       }
     }
     
-    // Fallback para imagem genérica se não encontrar específica
-    return `https://source.unsplash.com/300x200/?restaurant,${cuisine.split(',').shift() || 'food'}`;
+    return null;
   } catch (error) {
     console.error("Erro ao buscar imagem:", error);
     return null;
   }
 }
 
-// Exibe os restaurantes no DOM
+// Exibe os restaurantes no DOM (AGORA COM VERIFICAÇÃO DE IMAGEM)
 function displayRestaurants(restaurants, userLat, userLng) {
   const restaurantsContainer = document.getElementById("restaurants-container");
   
@@ -150,8 +173,8 @@ function displayRestaurants(restaurants, userLat, userLng) {
     restaurantsContainer.innerHTML = `
       <div class="no-restaurants">
         <i class="fas fa-utensils fa-3x"></i>
-        <h3>Nenhum restaurante encontrado próximo a você</h3>
-        <p>Tente aumentar o raio de busca ou verifique se há restaurantes cadastrados no OpenStreetMap na sua região.</p>
+        <h3>Nenhum restaurante com endereço completo encontrado</h3>
+        <p>Não encontramos restaurantes com endereço válido próximo a você. Tente aumentar o raio de busca.</p>
       </div>
     `;
     return;
@@ -161,13 +184,18 @@ function displayRestaurants(restaurants, userLat, userLng) {
     <div class="restaurants-grid">
       ${restaurants.map(rest => `
         <div class="restaurant-card">
-          ${rest.image ? `
-            <div class="restaurant-image" style="background-image: url('${rest.image}')">
-              <div class="rating-badge">
-                <i class="fas fa-star"></i> ${rest.rating}
+          <div class="restaurant-image-container">
+            ${rest.image ? `
+              <div class="restaurant-image" style="background-image: url('${rest.image}')"></div>
+            ` : `
+              <div class="restaurant-image placeholder">
+                <i class="fas fa-utensils fa-3x"></i>
               </div>
+            `}
+            <div class="rating-badge">
+              <i class="fas fa-star"></i> ${rest.rating.toFixed(1)}
             </div>
-          ` : ''}
+          </div>
           <div class="restaurant-info">
             <h3>${rest.name}</h3>
             <p class="cuisine"><i class="fas fa-utensils"></i> ${rest.cuisine}</p>
@@ -178,18 +206,16 @@ function displayRestaurants(restaurants, userLat, userLng) {
                 <i class="fas fa-external-link-alt"></i> Visitar Site
               </a>
             ` : ''}
-            ${rest.lat && rest.lon ? `
-              <a href="https://www.openstreetmap.org/?mlat=${rest.lat}&mlon=${rest.lon}#map=18/${rest.lat}/${rest.lon}" 
-                 target="_blank" class="map-link">
-                <i class="fas fa-map"></i> Ver no Mapa
-              </a>
-            ` : ''}
+            <a href="https://www.openstreetmap.org/?mlat=${rest.lat}&mlon=${rest.lon}#map=18/${rest.lat}/${rest.lon}" 
+               target="_blank" class="map-link">
+              <i class="fas fa-map"></i> Ver no Mapa
+            </a>
           </div>
         </div>
       `).join('')}
     </div>
     <div class="attribution">
-      <p>Dados obtidos do OpenStreetMap | Imagens do Wikimedia Commons</p>
+      <p>Dados obtidos do OpenStreetMap | Imagens do Unsplash/Wikimedia</p>
     </div>
   `;
 }
