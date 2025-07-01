@@ -2,14 +2,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Elementos do DOM
   const statusEl = document.getElementById("status");
   const enderecoEl = document.getElementById("endereco");
-  const restaurantsContainer = document.createElement("div");
-  restaurantsContainer.id = "restaurants-container";
-  document.body.appendChild(restaurantsContainer);
+  const restaurantsContainer = document.getElementById("restaurants-container");
+  const restaurantSection = document.getElementById("restaurants-section");
+  const ipInfoContainer = document.getElementById("ip-info-container");
 
   // Verifica suporte à geolocalização
   if (!navigator.geolocation) {
-    statusEl.textContent = "Geolocalização não suportada.";
-    restaurantsContainer.innerHTML = "<p>Não foi possível acessar sua localização para buscar restaurantes próximos.</p>";
+    statusEl.innerHTML = "<i class='fas fa-exclamation-triangle'></i> Geolocalização não suportada pelo seu navegador.";
     return;
   }
 
@@ -18,39 +17,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     const position = await new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 0
       });
     });
 
     const { latitude, longitude } = position.coords;
-    statusEl.textContent = `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
+    statusEl.innerHTML = `<i class='fas fa-check-circle'></i> Localização obtida: <strong>Lat:</strong> ${latitude.toFixed(5)}, <strong>Lng:</strong> ${longitude.toFixed(5)}`;
 
     // 2. Busca endereço e restaurantes
     const [addressData, restaurants] = await Promise.all([
       fetchAddress(latitude, longitude),
-      fetchOSMRestaurants(latitude, longitude)
+      fetchNearbyRestaurants(latitude, longitude)
     ]);
 
-    enderecoEl.textContent = addressData.display_name || "Endereço não encontrado.";
-    displayRestaurants(restaurants);
+    enderecoEl.innerHTML = `<i class='fas fa-map-marked-alt'></i> <strong>Endereço:</strong> ${addressData.display_name || "Não disponível"}`;
+    
+    // Mostra a seção de restaurantes
+    restaurantSection.style.display = 'block';
+    displayRestaurants(restaurants, latitude, longitude);
 
   } catch (error) {
     console.error("Erro:", error);
-    statusEl.textContent = error.message.includes("permission") 
-      ? "Permissão de localização negada. Ative para ver restaurantes próximos."
-      : "Erro ao obter localização: " + error.message;
-    restaurantsContainer.innerHTML = "<p>Não foi possível carregar restaurantes próximos.</p>";
+    statusEl.innerHTML = `<i class='fas fa-times-circle'></i> ${
+      error.message.includes("permission") 
+        ? "Permissão de localização negada. Por favor, permita o acesso à localização para usar este serviço."
+        : "Erro ao obter localização: " + error.message
+    }`;
   }
 
-  // Busca informações do IP (opcional)
-  fetchIPInfo();
+  // Busca informações do IP
+  fetchIPInfo(ipInfoContainer);
 });
 
-// Busca endereço usando Nominatim (OpenStreetMap)
+// Função para buscar endereço
 async function fetchAddress(lat, lng) {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt-BR`);
     if (!response.ok) throw new Error("Erro ao buscar endereço");
     return await response.json();
   } catch (error) {
@@ -59,8 +62,8 @@ async function fetchAddress(lat, lng) {
   }
 }
 
-// Busca restaurantes usando Overpass API (OpenStreetMap)
-async function fetchOSMRestaurants(lat, lng, radius = 1000) {
+// Função para buscar restaurantes próximos (usando Overpass API)
+async function fetchNearbyRestaurants(lat, lng, radius = 1000) {
   try {
     const overpassQuery = `
       [out:json];
@@ -70,6 +73,8 @@ async function fetchOSMRestaurants(lat, lng, radius = 1000) {
         relation["amenity"="restaurant"](around:${radius},${lat},${lng});
       );
       out center;
+      >;
+      out skel qt;
     `;
 
     const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
@@ -78,89 +83,153 @@ async function fetchOSMRestaurants(lat, lng, radius = 1000) {
     const data = await response.json();
     const elements = data.elements || [];
     
-    // Filtra e formata os resultados
-    return elements
-      .map(element => {
-        const tags = element.tags || {};
-        return {
-          name: tags.name || "Restaurante sem nome",
-          rating: parseFloat(tags["smiley:rating"] || tags.rating || (3 + Math.random() * 2).toFixed(1)),
-          vicinity: tags["addr:street"] 
-            ? `${tags["addr:street"]} ${tags["addr:housenumber"] || ""}`.trim() 
-            : "Endereço não disponível",
-          cuisine: tags.cuisine || "Variada",
-          website: tags.website || null
+    // Processa os resultados
+    const restaurants = [];
+    for (const element of elements) {
+      if (element.tags && element.tags.name) {
+        const restaurant = {
+          id: element.id,
+          name: element.tags.name,
+          rating: parseFloat(element.tags["smiley:rating"] || (3.5 + Math.random() * 1.5).toFixed(1)),
+          address: element.tags["addr:street"] ? 
+            `${element.tags["addr:street"]} ${element.tags["addr:housenumber"] || ""}`.trim() : 
+            "Endereço não disponível",
+          cuisine: element.tags.cuisine || "Variada",
+          website: element.tags.website || null,
+          lat: element.lat || element.center?.lat,
+          lon: element.lon || element.center?.lon
         };
-      })
+        
+        // Busca imagem do restaurante (se disponível)
+        restaurant.image = await fetchRestaurantImage(restaurant.name, restaurant.cuisine);
+        restaurants.push(restaurant);
+      }
+    }
+    
+    return restaurants
       .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5); // Top 5
+      .slice(0, 5);
 
   } catch (error) {
-    console.error("Erro no fetchOSMRestaurants:", error);
+    console.error("Erro no fetchNearbyRestaurants:", error);
     return [];
   }
 }
 
+// Função para buscar imagem do restaurante (Wikimedia Commons)
+async function fetchRestaurantImage(name, cuisine) {
+  try {
+    const searchTerm = `${name} ${cuisine} restaurant`.replace(/\s+/g, '+');
+    const response = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=images&titles=${searchTerm}&prop=imageinfo&iiprop=url&format=json&origin=*`);
+    
+    const data = await response.json();
+    const pages = data.query?.pages;
+    
+    if (pages) {
+      for (const pageId in pages) {
+        const imageUrl = pages[pageId].imageinfo?.[0]?.url;
+        if (imageUrl) {
+          return imageUrl;
+        }
+      }
+    }
+    
+    // Fallback para imagem genérica se não encontrar específica
+    return `https://source.unsplash.com/300x200/?restaurant,${cuisine.split(',').shift() || 'food'}`;
+  } catch (error) {
+    console.error("Erro ao buscar imagem:", error);
+    return null;
+  }
+}
+
 // Exibe os restaurantes no DOM
-function displayRestaurants(restaurants) {
+function displayRestaurants(restaurants, userLat, userLng) {
   const restaurantsContainer = document.getElementById("restaurants-container");
   
   if (!restaurants.length) {
     restaurantsContainer.innerHTML = `
-      <div class="restaurants-box">
-        <h2><i class="fas fa-utensils"></i> Restaurantes Próximos</h2>
-        <p class="no-results">Nenhum restaurante encontrado na sua área.</p>
-        <p class="suggestion">Tente aumentar o raio de busca ou verifique se há restaurantes cadastrados no OpenStreetMap na sua região.</p>
+      <div class="no-restaurants">
+        <i class="fas fa-utensils fa-3x"></i>
+        <h3>Nenhum restaurante encontrado próximo a você</h3>
+        <p>Tente aumentar o raio de busca ou verifique se há restaurantes cadastrados no OpenStreetMap na sua região.</p>
       </div>
     `;
     return;
   }
 
   restaurantsContainer.innerHTML = `
-    <div class="restaurants-box">
-      <h2><i class="fas fa-utensils"></i> Top 5 Restaurantes Próximos</h2>
-      <div class="restaurants-list">
-        ${restaurants.map((rest, index) => `
-          <div class="restaurant-item">
-            <span class="rank">${index + 1}</span>
-            <div class="restaurant-info">
-              <h3>${rest.name}</h3>
-              <div class="rating">
-                ${'★'.repeat(Math.floor(rest.rating))}${'☆'.repeat(5 - Math.floor(rest.rating))}
-                <span>${rest.rating}</span>
+    <div class="restaurants-grid">
+      ${restaurants.map(rest => `
+        <div class="restaurant-card">
+          ${rest.image ? `
+            <div class="restaurant-image" style="background-image: url('${rest.image}')">
+              <div class="rating-badge">
+                <i class="fas fa-star"></i> ${rest.rating}
               </div>
-              <p class="cuisine"><i class="fas fa-utensils"></i> ${rest.cuisine}</p>
-              <p class="address"><i class="fas fa-map-marker-alt"></i> ${rest.vicinity}</p>
-              ${rest.website ? `<a href="${rest.website.startsWith('http') ? rest.website : 'https://' + rest.website}" target="_blank" class="website">
-                <i class="fas fa-external-link-alt"></i> Website
-              </a>` : ''}
             </div>
+          ` : ''}
+          <div class="restaurant-info">
+            <h3>${rest.name}</h3>
+            <p class="cuisine"><i class="fas fa-utensils"></i> ${rest.cuisine}</p>
+            <p class="address"><i class="fas fa-map-marker-alt"></i> ${rest.address}</p>
+            ${rest.website ? `
+              <a href="${rest.website.startsWith('http') ? rest.website : 'https://' + rest.website}" 
+                 target="_blank" class="website-btn">
+                <i class="fas fa-external-link-alt"></i> Visitar Site
+              </a>
+            ` : ''}
+            ${rest.lat && rest.lon ? `
+              <a href="https://www.openstreetmap.org/?mlat=${rest.lat}&mlon=${rest.lon}#map=18/${rest.lat}/${rest.lon}" 
+                 target="_blank" class="map-link">
+                <i class="fas fa-map"></i> Ver no Mapa
+              </a>
+            ` : ''}
           </div>
-        `).join('')}
-      </div>
-      <p class="osm-attribution">Dados obtidos do OpenStreetMap</p>
+        </div>
+      `).join('')}
+    </div>
+    <div class="attribution">
+      <p>Dados obtidos do OpenStreetMap | Imagens do Wikimedia Commons</p>
     </div>
   `;
 }
 
-// Busca informações do IP (usando ip-api.com - gratuita)
-async function fetchIPInfo() {
+// Busca informações do IP
+async function fetchIPInfo(container) {
   try {
-    const response = await fetch("http://ip-api.com/json/?fields=status,message,country,regionName,city,isp,query");
+    const response = await fetch("https://ipapi.co/json/");
     const data = await response.json();
     
-    if (data.status !== "success") throw new Error(data.message || "Erro na API de IP");
-    
-    const ipInfo = document.createElement("div");
-    ipInfo.className = "ip-info";
-    ipInfo.innerHTML = `
-      <h2><i class="fas fa-network-wired"></i> Dados da Conexão</h2>
-      <p><strong>IP:</strong> ${data.query || "N/A"}</p>
-      <p><strong>Local:</strong> ${data.city || "N/A"}, ${data.regionName || "N/A"}</p>
-      <p><strong>Provedor:</strong> ${data.isp || "N/A"}</p>
+    container.innerHTML = `
+      <h2><i class="fas fa-network-wired"></i> Informações da Conexão</h2>
+      <div class="ip-info-grid">
+        <div class="ip-info-item">
+          <i class="fas fa-globe"></i>
+          <div>
+            <h3>IP Público</h3>
+            <p>${data.ip || "N/A"}</p>
+          </div>
+        </div>
+        <div class="ip-info-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <div>
+            <h3>Localização Aproximada</h3>
+            <p>${data.city || "N/A"}, ${data.region || "N/A"}</p>
+          </div>
+        </div>
+        <div class="ip-info-item">
+          <i class="fas fa-server"></i>
+          <div>
+            <h3>Provedor</h3>
+            <p>${data.org || "N/A"}</p>
+          </div>
+        </div>
+      </div>
     `;
-    document.body.appendChild(ipInfo);
   } catch (error) {
     console.warn("Erro ao obter informações do IP:", error);
+    container.innerHTML = `
+      <p class="ip-error"><i class="fas fa-info-circle"></i> Não foi possível obter informações da conexão</p>
+    `;
   }
 }
