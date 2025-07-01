@@ -3,7 +3,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f8f9fa;
+  background-color: #f5f7fa;
   color: #333;
   line-height: 1.6;
 }
@@ -19,7 +19,6 @@ body {
 header {
   text-align: center;
   margin-bottom: 30px;
-  padding: 20px 0;
 }
 
 header h1 {
@@ -38,9 +37,8 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   margin-bottom: 20px;
-  border-left: 4px solid #3498db;
 }
 
 .location-info h2 {
@@ -65,8 +63,7 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 #restaurants-section h2 {
@@ -75,22 +72,7 @@ header .subtitle {
   margin-top: 0;
 }
 
-.info-note {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin: 10px 0;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-}
-
-.info-note i {
-  margin-right: 8px;
-}
-
-/* Grid de Estabelecimentos */
+/* Grid de Restaurantes */
 .restaurants-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -100,55 +82,40 @@ header .subtitle {
 
 .restaurant-card {
   border: 1px solid #e0e0e0;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
-  transition: all 0.25s ease;
-  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .restaurant-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-5px);
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.restaurant-card.incomplete-address {
-  border: 1px solid #ff9800;
-}
-
-.restaurant-card.incomplete-address::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: #ff9800;
 }
 
 .restaurant-image-container {
   position: relative;
-  height: 160px;
+  height: 180px;
   overflow: hidden;
-  background: #f5f5f5;
+}
+
+.restaurant-image {
+  height: 100%;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s;
+}
+
+.restaurant-card:hover .restaurant-image {
+  transform: scale(1.05);
+}
+
+.placeholder {
+  background: #e0e0e0;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.restaurant-image.placeholder {
-  color: #aaa;
-  text-align: center;
-}
-
-.place-type {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.7);
-  color: white;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  color: #999;
 }
 
 .rating-badge {
@@ -159,7 +126,7 @@ header .subtitle {
   color: white;
   padding: 5px 10px;
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
 }
@@ -169,41 +136,27 @@ header .subtitle {
   color: #f1c40f;
 }
 
-.address-warning {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(255, 152, 0, 0.9);
-  color: white;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-}
-
-.address-warning i {
-  margin-right: 5px;
-  font-size: 0.8rem;
-}
-
 .restaurant-info {
   padding: 15px;
 }
 
 .restaurant-info h3 {
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
   color: #2c3e50;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
 }
 
 .cuisine, .address {
   color: #7f8c8d;
-  font-size: 0.85rem;
-  margin: 6px 0;
+  font-size: 0.9rem;
+  margin: 5px 0;
   display: flex;
   align-items: center;
+}
+
+.address.not-found {
+  color: #999;
+  font-style: italic;
 }
 
 .cuisine i, .address i {
@@ -214,11 +167,11 @@ header .subtitle {
 
 .website-btn, .map-link {
   display: inline-block;
-  padding: 6px 10px;
-  margin-top: 8px;
+  padding: 8px 12px;
+  margin-top: 10px;
   margin-right: 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  border-radius: 5px;
+  font-size: 0.9rem;
   text-decoration: none;
   transition: background-color 0.3s;
 }
@@ -241,7 +194,7 @@ header .subtitle {
   background: #27ae60;
 }
 
-/* Quando não há estabelecimentos */
+/* Quando não há restaurantes */
 .no-restaurants {
   text-align: center;
   padding: 30px;
@@ -269,7 +222,7 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
 #ip-info-container h2 {
@@ -290,9 +243,8 @@ header .subtitle {
   align-items: center;
   gap: 15px;
   padding: 15px;
-  background: #f8fafc;
+  background: #f8f9fa;
   border-radius: 8px;
-  border-left: 3px solid #9b59b6;
 }
 
 .ip-info-item i {
@@ -303,15 +255,14 @@ header .subtitle {
 .ip-info-item h3 {
   margin: 0 0 5px 0;
   font-size: 0.9rem;
-  color: #6c757d;
-  font-weight: 500;
+  color: #7f8c8d;
 }
 
 .ip-info-item p {
   margin: 0;
   font-size: 1rem;
-  color: #495057;
-  font-weight: 600;
+  color: #2c3e50;
+  font-weight: 500;
 }
 
 .ip-error {
@@ -328,6 +279,18 @@ footer {
   margin-top: 30px;
   color: #7f8c8d;
   font-size: 0.8rem;
+}
+
+/* Animação de loading para imagens */
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.image-loading {
+  animation: pulse 1.5s infinite;
+  background: #f0f0f0;
 }
 
 .loading-restaurants {
