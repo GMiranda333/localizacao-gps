@@ -11,7 +11,7 @@
   <div class="container">
     <header>
       <h1><i class="fas fa-map-marker-alt"></i> Localizador GPS + Restaurantes</h1>
-      <p class="subtitle">Encontre os melhores restaurantes próximos à sua localização atual</p>
+      <p class="subtitle">Encontre estabelecimentos próximos à sua localização atual</p>
     </header>
     
     <section class="location-info">
@@ -23,10 +23,13 @@
     </section>
     
     <section id="restaurants-section" style="display: none;">
-      <h2><i class="fas fa-utensils"></i> Restaurantes Próximos</h2>
+      <h2><i class="fas fa-utensils"></i> Estabelecimentos Próximos</h2>
+      <div class="info-note">
+        <i class="fas fa-info-circle"></i> Mostrando todos os estabelecimentos próximos
+      </div>
       <div id="restaurants-container" class="restaurants-container">
         <div class="loading-restaurants">
-          <i class="fas fa-circle-notch fa-spin"></i> Buscando restaurantes próximos...
+          <i class="fas fa-circle-notch fa-spin"></i> Buscando estabelecimentos próximos...
         </div>
       </div>
     </section>
@@ -35,13 +38,12 @@
   <div id="ip-info-container" class="container"></div>
 
   <footer class="container">
-    <p><small>Dados de localização fornecidos pelo seu navegador. Listagem de restaurantes obtida do OpenStreetMap.</small></p>
+    <p><small>Dados de localização fornecidos pelo seu navegador. Dados obtidos do OpenStreetMap.</small></p>
     <p><small>Atualizado em: <span id="current-date"></span></small></p>
   </footer>
 
   <script src="script.js"></script>
   <script>
-    // Exibe a data atual no footer
     document.getElementById('current-date').textContent = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
