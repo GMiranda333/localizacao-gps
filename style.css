@@ -37,7 +37,7 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
 }
 
@@ -63,7 +63,7 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 #restaurants-section h2 {
@@ -85,11 +85,12 @@ header .subtitle {
   border-radius: 8px;
   overflow: hidden;
   transition: transform 0.3s, box-shadow 0.3s;
+  background: #fff;
 }
 
 .restaurant-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .restaurant-image-container {
@@ -122,13 +123,14 @@ header .subtitle {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.75);
   color: white;
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  font-weight: bold;
 }
 
 .rating-badge i {
@@ -173,7 +175,8 @@ header .subtitle {
   border-radius: 5px;
   font-size: 0.9rem;
   text-decoration: none;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
+  white-space: nowrap;
 }
 
 .website-btn {
@@ -222,7 +225,8 @@ header .subtitle {
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
 }
 
 #ip-info-container h2 {
@@ -308,12 +312,19 @@ footer {
   .restaurants-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .ip-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   header h1 {
     font-size: 1.5rem;
+  }
+
+  .website-btn, .map-link {
+    display: block;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
   }
 }
