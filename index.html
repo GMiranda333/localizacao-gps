@@ -2,46 +2,38 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Localizador GPS + Restaurantes Próximos</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurantes Próximos</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
   <div class="container">
     <header>
-      <h1><i class="fas fa-map-marker-alt"></i> Localizador GPS + Restaurantes</h1>
-      <p class="subtitle">Encontre os melhores restaurantes próximos à sua localização atual</p>
+      <h1><i class="fas fa-map-marker-alt"></i> Restaurantes Próximos</h1>
+      <p class="subtitle">Veja os 10 melhores restaurantes perto de você</p>
     </header>
-    
+
     <section class="location-info">
       <h2><i class="fas fa-location-arrow"></i> Sua Localização</h2>
-      <div id="status">
-        <i class="fas fa-sync-alt fa-spin"></i> Detectando sua posição...
-      </div>
+      <div id="status"><i class="fas fa-sync-alt fa-spin"></i> Localizando...</div>
       <div id="endereco"></div>
     </section>
-    
+
     <section id="restaurants-section" style="display: none;">
-      <h2><i class="fas fa-utensils"></i> Restaurantes Próximos</h2>
+      <h2><i class="fas fa-utensils"></i> Top 10 Restaurantes</h2>
       <div id="restaurants-container" class="restaurants-container">
         <div class="loading-restaurants">
-          <i class="fas fa-circle-notch fa-spin"></i> Buscando restaurantes próximos...
+          <i class="fas fa-circle-notch fa-spin"></i> Buscando restaurantes...
         </div>
       </div>
     </section>
   </div>
-  
-  <div id="ip-info-container" class="container"></div>
 
   <footer class="container">
-    <p><small>Dados de localização fornecidos pelo seu navegador. Listagem de restaurantes obtida do OpenStreetMap.</small></p>
-    <p><small>Atualizado em: <span id="current-date"></span></small></p>
+    <p><small>Fonte: OpenStreetMap e Overpass API</small></p>
   </footer>
 
   <script src="script.js"></script>
-  <script>
-    document.getElementById('current-date').textContent = new Date().toLocaleString('pt-BR');
-  </script>
 </body>
 </html>
