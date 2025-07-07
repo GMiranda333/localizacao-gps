@@ -1,42 +1,82 @@
-.no-restaurants {
-  text-align: center;
-  padding: 30px;
-  color: #666;
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f5f5f5;
 }
 
-.no-restaurants i {
-  font-size: 3rem;
-  color: #3498db;
-  margin-bottom: 15px;
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.no-restaurants p {
-  margin: 10px 0;
+h1, h2 {
+    color: #333;
 }
 
-.distance-badge {
-  background: rgba(0,0,0,0.7);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 20px;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 0.8rem;
+.map-container {
+    margin: 20px 0;
 }
 
-.map-link {
-  display: inline-block;
-  margin-top: 10px;
-  color: #3498db;
-  text-decoration: none;
-  font-size: 0.9rem;
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 4px;
+    border: 1px solid #ddd;
 }
 
-.map-link:hover {
-  text-decoration: underline;
+.controls {
+    margin: 15px 0;
+    text-align: center;
 }
 
-.restaurant-image {
-  position: relative;
+#find-me {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#find-me:hover {
+    background-color: #3367d6;
+}
+
+#status {
+    margin-top: 10px;
+    color: #666;
+}
+
+#restaurants-list {
+    margin-top: 15px;
+}
+
+.restaurant-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.restaurant-item:last-child {
+    border-bottom: none;
+}
+
+.restaurant-name {
+    font-weight: bold;
+    color: #202124;
+}
+
+.restaurant-address {
+    color: #5f6368;
+    font-size: 14px;
+}
+
+.restaurant-rating {
+    color: #fa7b17;
+    font-size: 14px;
 }
