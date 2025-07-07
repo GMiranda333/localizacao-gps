@@ -1,114 +1,127 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const statusEl = document.getElementById("status");
-  const enderecoEl = document.getElementById("endereco");
-  const restaurantsSection = document.getElementById("restaurants-section");
-  const restaurantsContainer = document.getElementById("restaurants-container");
+// Variáveis globais
+let map;
+let userMarker;
+let placesService;
+const statusElement = document.getElementById('status');
+const findMeButton = document.getElementById('find-me');
+const restaurantsList = document.getElementById('restaurants-list');
 
-  // Dados fictícios de fallback
-  const fallbackRestaurants = [
-    {
-      nome: "Restaurante Bem Brasileiro",
-      tipo: "Brasileira",
-      rating: 4.5,
-      lat: -23.5505,
-      lon: -46.6333,
-      endereco: "Rua da Quitanda, 86 - Centro"
-    },
-    {
-      nome: "Pizzaria Forno de Minas",
-      tipo: "Pizza",
-      rating: 4.2,
-      lat: -23.5510,
-      lon: -46.6340,
-      endereco: "Av. São João, 1000"
-    }
-  ];
-
-  if (!navigator.geolocation) {
-    statusEl.innerHTML = "<i class='fas fa-exclamation-triangle'></i> Geolocalização não suportada.";
-    displayRestaurants(fallbackRestaurants, -23.5505, -46.6333);
-    restaurantsSection.style.display = "block";
-    return;
-  }
-
-  try {
-    const pos = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 20000
-      });
+// Inicialização do mapa
+function initMap() {
+    // Configuração inicial do mapa (centro em Brasília como fallback)
+    map = new google.maps.Map(document.getElementById('map"), {
+        center: { lat: -15.7975, lng: -47.8919 },
+        zoom: 13
     });
 
-    const { latitude, longitude } = pos.coords;
-    statusEl.innerHTML = `<i class="fas fa-check-circle"></i> Localização obtida com sucesso`;
+    placesService = new google.maps.places.PlacesService(map);
 
-    try {
-      const address = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=pt-BR`)
-        .then(res => res.json());
-      enderecoEl.innerHTML = `<i class="fas fa-map-marked-alt"></i> ${address.display_name || "Sua localização atual"}`;
-    } catch (e) {
-      enderecoEl.innerHTML = `<i class="fas fa-map-marked-alt"></i> Localização: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-    }
-
-    // Tenta buscar da API
-    let restaurants = await fetchRestaurants(latitude, longitude, 5000);
-    
-    // Se não encontrou, usa fallback ajustando as coordenadas
-    if (!restaurants || restaurants.length === 0) {
-      restaurants = fallbackRestaurants.map(r => ({
-        ...r,
-        lat: latitude + (r.lat + 23.5505) * 0.01,
-        lon: longitude + (r.lon + 46.6333) * 0.01
-      }));
-    }
-    
-    displayRestaurants(restaurants, latitude, longitude);
-    restaurantsSection.style.display = "block";
-
-  } catch (err) {
-    statusEl.innerHTML = `<i class="fas fa-times-circle"></i> Erro: ${err.message}`;
-    console.error("Erro:", err);
-    // Usa fallback em caso de erro
-    displayRestaurants(fallbackRestaurants, -23.5505, -46.6333);
-    restaurantsSection.style.display = "block";
-  }
-});
-
-async function fetchRestaurants(lat, lon, radius = 5000) {
-  try {
-    const query = `
-      [out:json][timeout:30];
-      (
-        node["amenity"="restaurant"](around:${radius},${lat},${lon});
-        way["amenity"="restaurant"](around:${radius},${lat},${lon});
-        relation["amenity"="restaurant"](around:${radius},${lat},${lon});
-      );
-      out body;
-      >;
-      out skel qt;
-    `;
-    
-    const response = await fetch(`https://overpass.kumi.systems/api/interpreter?data=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    
-    if (!data.elements || data.elements.length === 0) return [];
-    
-    return data.elements
-      .filter(el => el.tags?.name)
-      .map(el => ({
-        nome: el.tags.name,
-        tipo: el.tags.cuisine || "Restaurante",
-        rating: parseFloat(el.tags.rating || el.tags["smiley:rating"] || (3.5 + Math.random() * 1.5)).toFixed(1),
-        lat: el.lat || (el.center && el.center.lat),
-        lon: el.lon || (el.center && el.center.lon),
-        endereco: buildAddress(el.tags)
-      }))
-      .sort((a, b) => b.rating - a.rating);
-      
-  } catch (error) {
-    console.error("Erro na API:", error);
-    return null;
-  }
+    // Event listener para o botão de localização
+    findMeButton.addEventListener('click', findMyLocation);
 }
 
-// ... (mantenha as outras funções displayRestaurants, buildAddress e calculateDistance do código anterior)
+// Busca a localização do usuário
+function findMyLocation() {
+    statusElement.textContent = "Obtendo sua localização...";
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const userLocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                statusElement.textContent = "Localização encontrada!";
+                updateMap(userLocation);
+                searchNearbyRestaurants(userLocation);
+            },
+            error => {
+                console.error("Erro na geolocalização:", error);
+                statusElement.textContent = "Erro ao obter localização: " + error.message;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        statusElement.textContent = "Geolocalização não suportada pelo navegador.";
+    }
+}
+
+// Atualiza o mapa com a localização do usuário
+function updateMap(location) {
+    map.setCenter(location);
+    
+    // Remove o marcador anterior se existir
+    if (userMarker) {
+        userMarker.setMap(null);
+    }
+    
+    // Adiciona novo marcador
+    userMarker = new google.maps.Marker({
+        position: location,
+        map: map,
+        title: "Você está aqui",
+        icon: {
+            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+        }
+    });
+}
+
+// Busca restaurantes próximos
+function searchNearbyRestaurants(location) {
+    restaurantsList.innerHTML = "<p>Buscando restaurantes próximos...</p>";
+    
+    const request = {
+        location: location,
+        radius: 1000, // 1km de raio
+        type: ['restaurant'],
+        rankBy: google.maps.places.RankBy.PROMINENCE
+    };
+
+    placesService.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+            displayRestaurants(results);
+            addRestaurantsToMap(results);
+        } else {
+            console.error("Erro na busca por restaurantes:", status);
+            restaurantsList.innerHTML = "<p>Não foi possível encontrar restaurantes próximos.</p>";
+        }
+    });
+}
+
+// Exibe a lista de restaurantes
+function displayRestaurants(restaurants) {
+    if (restaurants.length === 0) {
+        restaurantsList.innerHTML = "<p>Nenhum restaurante encontrado nesta área.</p>";
+        return;
+    }
+
+    let html = '';
+    restaurants.forEach(restaurant => {
+        html += `
+            <div class="restaurant-item">
+                <div class="restaurant-name">${restaurant.name}</div>
+                <div class="restaurant-address">${restaurant.vicinity || 'Endereço não disponível'}</div>
+                <div class="restaurant-rating">⭐ ${restaurant.rating || 'Sem avaliação'}</div>
+            </div>
+        `;
+    });
+
+    restaurantsList.innerHTML = html;
+}
+
+// Adiciona marcadores dos restaurantes no mapa
+function addRestaurantsToMap(restaurants) {
+    restaurants.forEach(restaurant => {
+        new google.maps.Marker({
+            position: restaurant.geometry.location,
+            map: map,
+            title: restaurant.name,
+            icon: {
+                url: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
+            }
+        });
+    });
+}
+
+// Inicializa o mapa quando a API estiver carregada
+window.onload = initMap;
