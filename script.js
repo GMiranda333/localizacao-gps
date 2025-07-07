@@ -72,7 +72,7 @@ function searchNearbyRestaurants(location) {
     
     const request = {
         location: location,
-        radius: 1000, // 1km de raio
+        radius: 10000, // 1km de raio
         type: ['restaurant'],
         rankBy: google.maps.places.RankBy.PROMINENCE
     };
